@@ -19,6 +19,11 @@ on:
         required: false
         type: string
         default: ""
+      add-openldap-service:
+        description: "Enable an OpenLDAP service for integration testing"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   ci:
@@ -38,6 +43,18 @@ jobs:
           MYSQL_DATABASE: "glpi"
         options: >-
           --shm-size=1g
+      openldap:
+        # Workaround to only add the service if a given variable is set.
+        # See: https://github.com/actions/runner/issues/822
+        image: ${{ inputs.add-openldap-service && 'osixia/openldap:latest' || '' }}
+        environment:
+          LDAP_ORGANISATION: "GLPI"
+          LDAP_DOMAIN: "glpi.org"
+          LDAP_ADMIN_USERNAME: "admin"
+          LDAP_ADMIN_PASSWORD: "admin"
+        command: "--copy-service"
+        volumes:
+          - "/var/www/tests/LDAP/ldif/10-users.ldif:/container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif:rw"
     defaults:
       run:
         # By default, execute commands using the `www-data` user to prevent rights issues on GLPI generated files.
